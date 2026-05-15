@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Bookshop GraphQL Demo — PRADO application configuration.
+
+    Endpoints
+    ─────────
+    GET/POST  /index.php?graphql     Full-featured service: introspection on,
+                                     depth ≤ 8, complexity ≤ 100 (from shared
+                                     config), batching off.
+    GET/POST  /index.php?restricted  Hardened service: introspection disabled,
+                                     MaxQueryDepth=3, MaxQueryComplexity=5
+                                     (both override the shared config defaults).
+    GET/POST  /index.php?apq         APQ-enabled service: persisted-query cache,
+                                     batching on, depth ≤ 8 / complexity ≤ 100
+                                     inherited from shared config.
+-->
+<application id="BookshopDemo" mode="Debug">
+
+    <modules>
+        <!--
+            Shared GraphQL configuration — the Composer bootstrap module for
+            this extension, identified by the Composer package name so PRADO
+            resolves the class automatically when the package is installed as a
+            dependency.
+
+            NOTE: in this demo the package is the root project (not an installed
+            dependency), so vendor/composer/installed.json does not list it and
+            PRADO cannot auto-resolve the class.  The class attribute is
+            therefore explicit here.  In a real application that installs
+            belisoful/prado-graphql via Composer the class attribute can be
+            omitted — PRADO looks up the bootstrap class from installed.json
+            and throws if class is also specified.
+
+            MaxQueryDepth="8"        — rejects queries nested deeper than 8
+                                       non-leaf levels (overridden to 3 by the
+                                       restricted endpoint).
+            MaxQueryComplexity="100" — rejects queries whose field-count score
+                                       exceeds 100 (overridden to 5 by the
+                                       restricted endpoint).
+
+            EnableIntrospection and EnableBatchedQueries are left at their
+            compiled-in defaults (true / false respectively) so each service
+            can opt in or out without conflicting with the shared config.
+        -->
+        <module id="belisoful/prado-graphql"
+                class="Prado\Web\Services\TGraphQLServiceConfig"
+                MaxQueryDepth="8"
+                MaxQueryComplexity="100" />
+
+        <!--
+            In-memory cache backed by a JSON temp file.
+            Used by the APQ endpoint for persisted-query storage.
+            PrimaryCache="false" prevents PRADO from registering this as the
+            application-wide system cache.
+        -->
+        <module id="apq-cache"
+                class="DemoApp\StaticArrayCache"
+                PrimaryCache="false" />
+    </modules>
+
+    <services>
+        <!--
+            Main endpoint — inherits MaxQueryDepth=8 and MaxQueryComplexity=100
+            from the shared config; introspection on, batching off.
+        -->
+        <service id="graphql"
+                 class="Prado\Web\Services\TGraphQLService"
+                 SchemaBuilderClass="DemoApp\BookshopSchemaBuilder"
+                 ConfigID="belisoful/prado-graphql" />
+
+        <!--
+            Restricted endpoint — production-like hardening.
+            MaxQueryDepth="3" and MaxQueryComplexity="5" override the shared
+            config defaults; EnableIntrospection="false" overrides the shared
+            default of true.  ConfigID still wires the module so any future
+            shared properties (e.g. DebugFlag) apply automatically.
+        -->
+        <service id="restricted"
+                 class="Prado\Web\Services\TGraphQLService"
+                 SchemaBuilderClass="DemoApp\BookshopSchemaBuilder"
+                 ConfigID="belisoful/prado-graphql"
+                 EnableIntrospection="false"
+                 MaxQueryDepth="3"
+                 MaxQueryComplexity="5" />
+
+        <!--
+            APQ endpoint — persisted-query cache and batching enabled.
+            EnableBatchedQueries="true" overrides the shared default of false;
+            MaxQueryDepth and MaxQueryComplexity inherit 8 / 100 from shared config.
+        -->
+        <service id="apq"
+                 class="Prado\Web\Services\TGraphQLService"
+                 SchemaBuilderClass="DemoApp\BookshopSchemaBuilder"
+                 ConfigID="belisoful/prado-graphql"
+                 CacheID="apq-cache"
+                 EnableBatchedQueries="true" />
+    </services>
+
+</application>

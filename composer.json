@@ -1,0 +1,71 @@
+{
+	"name": "belisoful/prado-graphql",
+	"type": "prado4-extension",
+	"description": "GraphQL service extension for the PRADO4 framework",
+	"keywords": ["prado", "framework", "graphql", "service", "api"],
+	"homepage": "https://github.com/pradosoft/prado-graphql",
+	"license": "BSD-3-Clause",
+	"authors": [
+		{
+			"name": "Brad Anderson",
+			"email": "belisoful@icloud.com",
+			"role": "Developer",
+			"homepage": "https://github.com/belisoful"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Prado\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"DemoApp\\": "examples/graphql-demo/protected/"
+		}
+	},
+	"repositories": [
+		{
+			"type": "composer",
+			"url": "https://asset-packagist.org"
+		}
+	],
+	"require": {
+		"php": ">=8.1.0",
+		"webonyx/graphql-php": "^15.0"
+	},
+	"require-dev": {
+		"friendsofphp/php-cs-fixer": "^3.94",
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit" : "^10",
+		"pradosoft/prado" : "^4.3.2",
+		"phpdocumentor/shim": "^3"
+	},
+	"config": {
+		"platform": {
+			"php": "8.1"
+		},
+		"allow-plugins": {
+			"phpdocumentor/shim": true
+		}
+	},
+	"scripts": {
+		"devtools": "composer install", 
+		"fix": "vendor/bin/php-cs-fixer fix",
+		"stan": "vendor/bin/phpstan analyse --memory-limit=512M",
+		"unit": "vendor/bin/phpunit --testsuite unit",
+		"int": "vendor/bin/phpunit --testsuite integration",
+		"func": "vendor/bin/phpunit --testsuite functional",
+		"unittest": "@unit",
+		"inttest": "@int",
+		"functest": "@func",
+		"fulltest": [
+			"@fix",
+			"@stan",
+			"@alltest"
+		],
+		"alltest": "vendor/bin/phpunit --testsuite all"
+	},
+	"extra": {
+		"bootstrap": "Prado\\Web\\Services\\TGraphQLServiceConfig"
+	}
+}

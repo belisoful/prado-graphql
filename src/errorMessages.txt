@@ -1,0 +1,7 @@
+
+graphqlservice_schema_builder_required		= TGraphQLService requires SchemaBuilderClass to be set before the service can handle requests.
+graphqlservice_schema_builder_invalid		= TGraphQLService SchemaBuilderClass "{0}" must implement IGraphQLSchemaBuilder.
+graphqlservice_request_parse_failed			= TGraphQLService failed to parse the request body: {0}
+graphqlservice_method_not_allowed			= TGraphQLService only accepts GET and POST requests; received {0}.
+graphqlservice_batch_not_allowed			= TGraphQLService batched queries are not enabled on this endpoint.
+graphqlserviceconfig_invalid				= TGraphQLServiceConfig module "{0}" is not a valid TGraphQLServiceConfig instance.
