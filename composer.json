@@ -66,6 +66,10 @@
 		"alltest": "vendor/bin/phpunit --testsuite all"
 	},
 	"extra": {
-		"bootstrap": "Prado\\Web\\Services\\TGraphQLServiceConfig"
+		"bootstrap": "Prado\\Web\\Services\\TGraphQLServiceConfig",
+		"prado": {
+			"bootstrap": "Prado\\Web\\Services\\TGraphQLServiceConfig",
+			"error-messages": "src/errorMessages.txt"
+		}
 	}
 }
