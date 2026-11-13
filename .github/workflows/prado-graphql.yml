@@ -1,34 +1,56 @@
 name: PRADO GraphQL Extension
-on: [push, pull_request]
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+on:
+  push:
+  pull_request:
+  schedule:
+    # The extension tracks PRADO's prado-4.3 and master branches, so a change there can break a
+    # build that no commit here triggered. Once a week catches that.
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   composerext:
-    name: PRADO GraphQL Extension
+    name: PRADO ${{ matrix.prado }} / PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
-    services:
-      memcached:
-        image: memcached
-        ports:
-          - 11211:11211
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
       matrix:
-        php-versions: ['8.1', '8.2', '8.3']
+        # One code base for both lines. PRADO 4.3.3 supports PHP 8.1+, PRADO 4.4.0 PHP 8.2+.
+        include:
+          - { prado: '4.3.3', ref: prado-4.3, php: '8.1' }
+          - { prado: '4.3.3', ref: prado-4.3, php: '8.3' }
+          - { prado: '4.4.0', ref: master, php: '8.2' }
+          - { prado: '4.4.0', ref: master, php: '8.4' }
+
+    defaults:
+      run:
+        working-directory: prado-graphql
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout extension
+        uses: actions/checkout@v7
+        with:
+          path: prado-graphql
+
+      # composer.json resolves pradosoft/prado from the sibling directory ../prado.
+      - name: Checkout PRADO framework (${{ matrix.ref }})
+        uses: actions/checkout@v7
+        with:
+          repository: pradosoft/prado
+          ref: ${{ matrix.ref }}
+          path: prado
 
       - name: Setup PHP, with composer and extensions
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
-          extensions: ctype, dom, intl, json, mbstring, memcached, openssl, pcre, spl, zlib
+          php-version: ${{ matrix.php }}
+          extensions: ctype, dom, intl, json, mbstring, openssl, pcre, spl, zlib
           tools: php-cs-fixer, phpstan, cs2pr
 
-      - name: Validate composer.json and composer.lock
+      - name: Validate composer.json
         run: composer validate --strict
 
       - name: Validate code syntax using php-cs-fixer
@@ -39,18 +61,22 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: ${{ runner.os }}-php${{ matrix.php }}-prado${{ matrix.prado }}-composer-${{ hashFiles('prado-graphql/composer.json') }}
+          restore-keys: ${{ runner.os }}-php${{ matrix.php }}-prado${{ matrix.prado }}-composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        run: composer update --no-progress --prefer-dist --optimize-autoloader
 
       - name: Validate code using phpstan
-        run: phpstan analyse --error-format=checkstyle | cs2pr
+        run: phpstan analyse --memory-limit=512M --error-format=checkstyle | cs2pr
 
+      # A test that cannot run here skips itself; on this runner every prerequisite is installed, so
+      # a skip means a test stopped running. The step fails on it.
       - name: Run Unit Tests
         run: |
-          composer unittest
+          set -o pipefail
+          composer unittest | tee unit.log
+          if grep -q 'Skipped:' unit.log; then echo "::error::Unit tests were skipped."; exit 1; fi

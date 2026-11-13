@@ -27,29 +27,33 @@
 		{
 			"type": "composer",
 			"url": "https://asset-packagist.org"
+		},
+		{
+			"type": "path",
+			"url": "../prado",
+			"options": {
+				"symlink": true
+			}
 		}
 	],
 	"require": {
 		"php": ">=8.1.0",
-		"webonyx/graphql-php": "^15.0"
+		"webonyx/graphql-php": "^15.0",
+		"pradosoft/prado": "^4.3.3@dev"
 	},
 	"require-dev": {
 		"friendsofphp/php-cs-fixer": "^3.94",
 		"phpstan/phpstan": "^2.1",
-		"phpunit/phpunit" : "^10",
-		"pradosoft/prado" : "^4.3.2",
+		"phpunit/phpunit": "^10",
 		"phpdocumentor/shim": "^3"
 	},
 	"config": {
-		"platform": {
-			"php": "8.1"
-		},
 		"allow-plugins": {
 			"phpdocumentor/shim": true
 		}
 	},
 	"scripts": {
-		"devtools": "composer install", 
+		"devtools": "composer install",
 		"fix": "vendor/bin/php-cs-fixer fix",
 		"stan": "vendor/bin/phpstan analyse --memory-limit=512M",
 		"unit": "vendor/bin/phpunit --testsuite unit",
